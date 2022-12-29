@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EKART APP</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+</head>
+<body>
+  <!-- your regular html code -->
+  <div class="notification_subscribe_cls " id="notification_subscribe_cls">
+    <input type="button" id="notification_subscribe" name="notification_subscribe" value="notification_subscribe">
+    <a href="javascript:void(0);" class="enable_ekart_notification_never_ask">Never ask again on this computer</a>
+</div>
+
+  <!-- insert here the firebase sdk code-->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+  <script>
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyB1VNl4QPTrr4UqBoYW01AKoSyE1b6bjYk",
+  authDomain: "ekart-app-ec228.firebaseapp.com",
+  projectId: "ekart-app-ec228",
+  storageBucket: "ekart-app-ec228.appspot.com",
+  messagingSenderId: "15676790155",
+  appId: "1:15676790155:web:b55b973939d57245f38b8e",
+  measurementId: "G-8BSX6JQ9LP"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+const messaging = firebase.messaging();
+
+console.log(messaging);
+
+navigator.serviceWorker.register('/firebase-messaging-sw.js').then(registeration => {
+    firebase.messaging().useServiceWorker(registeration);
+});
+
+$("#notification_subscribe").on("click", function () {
+    browserpermission();
+});
+
+
+
+$(".enable_ekart_notification_never_ask").on("click", function () {
+    document.cookie = "permissions=never_ask";
+    $(".notification_subscribe_cls").hide();
+});
+//alert(Notification.permission);
+if (Notification.permission !== 'denied' || Notification.permission !== 'granted') {
+    $(".notification_subscribe_cls").hide();
+}
+if (Notification.permission == 'default') {
+    $(".notification_subscribe_cls").show();
+}
+function browserpermission() {
+    if (Notification.permission !== 'denied' && Notification.permission !== 'granted' || Notification.permission === "default") {
+       
+       Notification.requestPermission().then(permission => {
+           console.log(permission);
+           if(permission === "granted"){
+                messaging.getToken({vapidKey:"BCWi9fIo7G4QZisds1RXeg9D9EiwyTqG0N009K-qexQ2-g1ikwEZDsidrRPD9USrCLuoOugEixeSrFkbGDSw31E"}).then(token =>{
+                console.log(token);
+                $(".notification_subscribe_cls").hide();
+
+                $.ajax({
+                    url:  "http://localhost:8001/api/user/notification_token_create",
+                    type: "POST",
+                    cache: false,
+                    data: {browser_token: token, device_type:'web'},
+                    success: function (data) {
+                        console.log(data);
+                    }
+                });
+
+               });
+           }
+       }).catch(function (err) {
+            $(".notification_subscribe_cls").hide();
+            console.log('Permission denied', err);
+        });
+       
+        // Notification.requestPermission().then(function () {
+        //     //getToken(messaging);
+        //     return messaging.getToken();
+        // }).then(function (token) {
+        //     console.log(token);
+        //     if (Notification.permission == 'granted') {
+        //         $(".notification_subscribe_cls").hide();
+        //     }
+            
+        // }).catch(function (err) {
+        //     $(".notification_subscribe_cls").hide();
+        //     console.log('Permission denied', err);
+        // });
+    }
+}
+
+messaging.onMessage(function (payload) {
+    console.log('onMessage: ', payload);
+});
+</script>
+ 
+</body>
